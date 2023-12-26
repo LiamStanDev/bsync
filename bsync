@@ -22,16 +22,34 @@ if ! command -v inotifywait &> /dev/null; then
     exit 1
 fi
 
+printf "${BLUE}Start now?(y/n):${RESET}"
+read ACCEPT
+if [[ $ACCEPT =~ [yY] ]]; then
+    printf "${YELLOW}Performing initial sync to remote directory...${RESET}\n"
+    if ! rsync -az --delete --exclude='.git/' --exclude='node_modules/' --exclude='.idea/' --exclude='.vscode/' "$LOCAL_DIR" "$REMOTE_DIR"; then
+        printf "${RED}Initial sync failed. Please check your settings and try again.${RESET}\n"
+        exit 1
+    else
+        printf "${GREEN}Initial sync completed successfully.${RESET}\n"
+    fi
+else 
+    printf "${GREEN}bye ~${RESET}\n"
+    exit 0
+fi
+
+printf "${YELLOW}You can press ctrl + c to exit.${RESET}\n"
 # -mre means monitor, recursive, and envet
-inotifywait -mre close_write --exclude '(\.git/|node_modules/|\.idea/|\.vscode/)' "$LOCAL_DIR" |
+inotifywait -mr -e close_write -e delete --exclude '(\.git/|node_modules/|\.idea/|\.vscode/)' "$LOCAL_DIR" |
 while read -r directory events filename; do
     if [[ $filename =~ 4913 ]]; then
         continue
     fi
-    if ! rsync -az --delete "$LOCAL_DIR" "$REMOTE_DIR"; then
+
+    if rsync -az --delete "$LOCAL_DIR" "$REMOTE_DIR"; then
+        printf "${GREEN}File updated${RESET}：$directory$filename\n"
+    else
         printf "${RED}Error occurred during rsync.${RESET}\n"
         exit 1
     fi
     
-    printf "${GREEN}File updated${RESET}：$directory$filename\n"
 done

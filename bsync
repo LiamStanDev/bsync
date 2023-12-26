@@ -1,0 +1,37 @@
+#!/bin/env bash
+
+# Colors
+RED="\e[38;2;255;0;0m"  # red
+GREEN="\e[38;2;128;255;128m"  # green
+YELLOW="\e[33m"
+BLUE="\e[34m"
+RESET="\e[0m"  # reset color
+
+
+LOCAL_DIR=$(pwd)
+printf "${YELLOW}~~~   BSYNC   ~~~${RESET}\n"
+printf "${BLUE}Local working directory is:${RESET} $LOCAL_DIR\n" 
+
+printf "${BLUE}Enter remote directory (username@remotehost:/path/to/remote/dir): ${RESET}"
+read REMOTE_DIR
+
+
+# check whether inotify is installed
+if ! command -v inotifywait &> /dev/null; then
+    printf "${RED}inotifywait not installed. You should install inotify-tools.${RESET}\n"
+    exit 1
+fi
+
+# -mre means monitor, recursive, and envet
+inotifywait -mre close_write --exclude '(\.git/|node_modules/|\.idea/|\.vscode/)' "$LOCAL_DIR" |
+while read -r directory events filename; do
+    if [[ $filename =~ 4913 ]]; then
+        continue
+    fi
+    if ! rsync -az --delete "$LOCAL_DIR" "$REMOTE_DIR"; then
+        printf "${RED}Error occurred during rsync.${RESET}\n"
+        exit 1
+    fi
+    
+    printf "${GREEN}File updated${RESET}：$directory$filename\n"
+done

@@ -8,8 +8,8 @@ A script for synchronize local to remote directory.
 
 ## Requirements
 
-- rsync: synchronize tool
-- inotifywait: file watcher
+- `rsync`: synchronize tool
+- `inotifywait`: file watcher
 
 ## Installation
 
@@ -19,5 +19,3 @@ cd bsync
 chmod +x bsync
 ./bsync
 ```
-
-
